@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>كشف العمل - فرزاتشي للخياطة الرجالية</title>
+<style>
+* { box-sizing: border-box; }
+body { 
+    font-family: "Cairo", sans-serif; 
+    background: #fdfbf8; 
+    color: #333; 
+    margin:0; 
+    padding:0; 
+    text-align:center; 
+}
+header { 
+    background: black; 
+    color: gold; 
+    padding:12px; 
+    font-size:1.2em; 
+    font-weight:bold;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.container { 
+    padding:15px; 
+    max-width:1000px; 
+    margin:auto; 
+}
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+.input-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+.input-row input, 
+.input-row select, 
+.input-row textarea {
+    flex: 1;
+    min-width: 120px;
+}
+.table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+table { 
+    width:100%; 
+    border-collapse:collapse; 
+    font-size: 0.9em;
+    min-width: 600px;
+}
+th, td { 
+    border:1px solid #ccc; 
+    padding:8px 4px; 
+    word-break: break-word;
+}
+th { 
+    background:black; 
+    color:gold; 
+    font-size: 0.85em;
+}
+button { 
+    background:black; 
+    color:gold; 
+    border:none; 
+    padding:8px 12px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    margin:3px;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+button:hover { 
+    background:gold; 
+    color:black; 
+}
+.delete-all {
+    background: #d32f2f;
+    color: white;
+}
+.delete-all:hover {
+    background: #b71c1c;
+}
+input, select, textarea { 
+    padding:10px; 
+    border:1px solid #ccc; 
+    border-radius:6px; 
+    font-size: 1em;
+    width: 100%;
+}
+textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+#summary { 
+    margin-top:15px; 
+    font-size:1.1em; 
+    font-weight:bold; 
+    text-align:center;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 6px;
+}
+.buttons-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin: 10px 0;
+}
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 8px;
+}
+.filter-item {
+    flex: 1;
+    min-width: 140px;
+}
+.invoice-input {
+    background: #fffacd;
+    font-weight: bold;
+}
+.invoice-warning {
+    color: #d32f2f;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    th, td {
+        padding: 6px 3px;
+        font-size: 0.8em;
+    }
+    button {
+        padding: 6px 8px;
+        font-size: 0.8em;
+        margin: 2px;
+    }
+    .input-row {
+        flex-direction: column;
+    }
+    .input-row input, 
+    .input-row select {
+        min-width: 100%;
+    }
+    table {
+        font-size: 0.8em;
+        min-width: 500px;
+    }
+    .buttons-group {
+        gap: 3px;
+    }
+    .filter-group {
+        flex-direction: column;
+    }
+}
+@media (max-width: 480px) {
+    header {
+        font-size: 1.1em;
+        padding: 10px;
+    }
+    th, td {
+        padding: 4px 2px;
+        font-size: 0.75em;
+    }
+    button {
+        padding: 5px 6px;
+        font-size: 0.75em;
+    }
+    #summary {
+        font-size: 1em;
+    }
+}
+@media print { 
+    .no-print { display:none; } 
+    header { color:black; background:none; }
+    .container { padding: 0; }
+}
+</style>
+</head>
+<body>
+<header>فرزاتشي للخياطة الرجالية - كشف العمل</header>
+
+<div class="container">
+<div class="no-print">
+    <div class="input-group">
+        <div class="input-row">
+            <input type="number" id="invoiceNumber" placeholder="رقم الفاتورة" class="invoice-input" min="2301" max="3000">
+            <input type="date" id="date">
+            <select id="size">
+                <option value="">اختر النوع</option>
+                <option>24</option>
+                <option>26</option><option>28</option><option>30</option><option>32</option><option>34</option>
+                <option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+                <option>46</option><option>48</option><option>50</option>
+            </select>
+            <input type="number" id="count" placeholder="العدد">
+        </div>
+        <textarea id="note" placeholder="الملاحظات"></textarea>
+        <div id="invoiceWarning" class="invoice-warning"></div>
+    </div>
+    
+    <div class="buttons-group">
+        <button onclick="addRow()">➕ إضافة</button>
+        <button onclick="saveData()">💾 حفظ</button>
+        <button onclick="printFiltered()">🖨️ طباعة الملخص</button>
+        <button onclick="printFullTable()">🖨️ طباعة كامل</button>
+        <button onclick="generatePDF()">📄 إنشاء PDF</button>
+        <button onclick="sendWhatsAppPDFText()">💬 إرسال واتساب</button>
+        <button onclick="deleteAll()" class="delete-all">🗑️ حذف الكل</button>
+    </div>
+
+    <div class="filter-group">
+        <div class="filter-item">
+            <label>فلتر حسب اليوم: </label>
+            <input type="date" id="filterDate" onchange="applyFilters()">
+        </div>
+        <div class="filter-item">
+            <label>فلتر حسب النوع: </label>
+            <select id="filterType" onchange="applyFilters()">
+                <option value="">الكل</option>
+                <option>24</option>
+                <option>26</option><option>28</option><option>30</option><option>32</option><option>34</option>
+                <option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+                <option>46</option><option>48</option><option>50</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>فلتر حسب الفاتورة: </label>
+            <input type="number" id="filterInvoice" placeholder="رقم الفاتورة" onchange="applyFilters()">
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table id="workTable">
+    <thead>
+    <tr>
+    <th>رقم الفاتورة</th>
+    <th>التاريخ</th>
+    <th>النوع</th>
+    <th>العدد</th>
+    <th>الملاحظات</th>
+    <th class="no-print">إجراءات</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+    </table>
+</div>
+
+<div id="summary">إجمالي العدد: 0</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+let table = document.querySelector("#workTable tbody");
+let lastInvoice = Number(localStorage.getItem("lastInvoice") || 2300); // يبدأ من 2300 ليصبح الأول 2301
+
+// دالة للحصول على تاريخ اليوم بصيغة YYYY-MM-DD
+function getTodayDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// دالة للتحقق من صحة رقم الفاتورة
+function validateInvoiceNumber(invoiceNum) {
+    const warningElement = document.getElementById('invoiceWarning');
+    
+    if (invoiceNum < 2301 || invoiceNum > 3000) {
+        warningElement.textContent = 'رقم الفاتورة يجب أن يكون بين 2301 و 3000';
+        return false;
+    }
+    
+    // التحقق من عدم تكرار رقم الفاتورة
+    let existingInvoices = [];
+    table.querySelectorAll("tr").forEach(r => {
+        existingInvoices.push(parseInt(r.children[0].textContent));
+    });
+    
+    if (existingInvoices.includes(invoiceNum)) {
+        warningElement.textContent = 'رقم الفاتورة موجود مسبقاً!';
+        return false;
+    }
+    
+    warningElement.textContent = '';
+    return true;
+}
+
+// تعيين تاريخ اليوم تلقائياً عند تحميل الصفحة
+window.onload = function() {
+    document.getElementById('date').value = getTodayDate();
+    // تعيين رقم الفاتورة التالي تلقائياً
+    document.getElementById('invoiceNumber').value = lastInvoice + 1;
+    
+    // إضافة حدث التحقق عند تغيير رقم الفاتورة
+    document.getElementById('invoiceNumber').addEventListener('input', function() {
+        const invoiceNum = parseInt(this.value);
+        if (!isNaN(invoiceNum)) {
+            validateInvoiceNumber(invoiceNum);
+        } else {
+            document.getElementById('invoiceWarning').textContent = '';
+        }
+    });
+};
+
+function addRow() {
+  let invoiceInput = document.getElementById("invoiceNumber").value;
+  let date = document.getElementById("date").value;
+  let size = document.getElementById("size").value;
+  let count = document.getElementById("count").value;
+  let note = document.getElementById("note").value;
+  
+  if (!invoiceInput || !date || !size || !count) { 
+      alert("الرجاء إدخال جميع الحقول المطلوبة."); 
+      return; 
+  }
+
+  let invoiceNum = parseInt(invoiceInput);
+  
+  // التحقق من صحة رقم الفاتورة
+  if (!validateInvoiceNumber(invoiceNum)) {
+      return;
+  }
+
+  // تحديث lastInvoice إذا كان الرقم المدخل أكبر وفي النطاق المسموح
+  if (invoiceNum > lastInvoice && invoiceNum <= 3000) {
+      lastInvoice = invoiceNum;
+      localStorage.setItem("lastInvoice", lastInvoice);
+  }
+
+  let row = document.createElement("tr");
+  row.innerHTML = `<td>${invoiceNum}</td><td>${date}</td><td>${size}</td><td>${count}</td><td>${note}</td>
+  <td class="no-print">
+    <button onclick="editRow(this)">✏️ تعديل</button>
+    <button onclick="deleteRow(this)">🗑️ حذف</button>
+  </td>`;
+  table.appendChild(row);
+  clearFields(); 
+  saveData(); 
+  updateSummary();
+}
+
+function clearFields() {
+  // لا نمسح تاريخ اليوم، بل نعيد تعيينه لتاريخ اليوم الحالي
+  document.getElementById("date").value = getTodayDate();
+  // تعيين رقم الفاتورة التالي تلقائياً (إذا كان أقل من 3000)
+  let nextInvoice = lastInvoice + 1;
+  if (nextInvoice <= 3000) {
+      document.getElementById("invoiceNumber").value = nextInvoice;
+  } else {
+      document.getElementById("invoiceNumber").value = '';
+      document.getElementById("invoiceWarning").textContent = 'تم الوصول إلى آخر رقم فاتورة (3000)';
+  }
+  document.getElementById("size").value=""; 
+  document.getElementById("count").value=""; 
+  document.getElementById("note").value="";
+  document.getElementById("invoiceWarning").textContent = '';
+}
+
+function editRow(btn) {
+  let password = prompt("أدخل كلمة المرور للتعديل:"); 
+  if(password!=="1234"){alert("كلمة المرور غير صحيحة!"); return;}
+  let row=btn.parentElement.parentElement;
+  document.getElementById("invoiceNumber").value = row.children[0].textContent;
+  document.getElementById("date").value=row.children[1].textContent;
+  document.getElementById("size").value=row.children[2].textContent;
+  document.getElementById("count").value=row.children[3].textContent;
+  document.getElementById("note").value=row.children[4].textContent;
+  row.remove(); 
+  saveData(); 
+  updateSummary();
+}
+
+function deleteRow(btn) {
+  let password = prompt("أدخل كلمة المرور للحذف:"); 
+  if(password!=="1234"){alert("كلمة المرور غير صحيحة!"); return;}
+  btn.parentElement.parentElement.remove(); 
+  saveData(); 
+  updateSummary();
+}
+
+function deleteAll() {
+  let password = prompt("أدخل كلمة المرور لحذف جميع البيانات:"); 
+  if(password!=="1234"){alert("كلمة المرور غير صحيحة!"); return;}
+  
+  if(confirm("⚠️ هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!")) {
+    table.innerHTML = "";
+    lastInvoice = 2300; // إعادة التعيين إلى 2300
+    localStorage.setItem("lastInvoice", lastInvoice);
+    saveData();
+    updateSummary();
+    clearFields();
+    alert("تم حذف جميع البيانات بنجاح.");
+  }
+}
+
+function saveData() {
+  let rows=[]; 
+  table.querySelectorAll("tr").forEach(r=>{
+    rows.push({
+      invoice:r.children[0].textContent,
+      date:r.children[1].textContent,
+      size:r.children[2].textContent,
+      count:r.children[3].textContent,
+      note:r.children[4].textContent
+    });
+  });
+  localStorage.setItem("workData", JSON.stringify(rows));
+}
+
+function loadData() {
+  let data = JSON.parse(localStorage.getItem("workData") || "[]");
+  data.forEach(d=>{
+    let row=document.createElement("tr");
+    row.innerHTML=`<td>${d.invoice}</td><td>${d.date}</td><td>${d.size}</td><td>${d.count}</td><td>${d.note}</td>
+    <td class="no-print">
+      <button onclick="editRow(this)">✏️ تعديل</button>
+      <button onclick="deleteRow(this)">🗑️ حذف</button>
+    </td>`;
+    table.appendChild(row);
+  });
+  if(data.length>0){
+    let invoices = data.map(d=>Number(d.invoice));
+    lastInvoice = Math.max(...invoices); 
+    // التأكد من أن lastInvoice لا يتجاوز 3000
+    if (lastInvoice > 3000) lastInvoice = 3000;
+    localStorage.setItem("lastInvoice", lastInvoice);
+  }
+  updateSummary();
+}
+loadData();
+
+function updateSummary(){
+  let total=0;
+  table.querySelectorAll("tr").forEach(r=>total+=Number(r.children[3].textContent||0));
+  document.getElementById("summary").textContent=`إجمالي العدد: ${total}`;
+}
+
+function applyFilters(){
+  let filterDate=document.getElementById("filterDate").value;
+  let filterType=document.getElementById("filterType").value;
+  let filterInvoice=document.getElementById("filterInvoice").value;
+  
+  table.querySelectorAll("tr").forEach(r=>{
+    let show=true;
+    if(filterDate && r.children[1].textContent!==filterDate) show=false;
+    if(filterType && r.children[2].textContent!==filterType) show=false;
+    if(filterInvoice && r.children[0].textContent!==filterInvoice) show=false;
+    r.style.display=show?"":"none";
+  });
+  updateSummary();
+}
+
+function printFiltered(){ 
+  applyFilters(); 
+  window.print(); 
+}
+
+function printFullTable(){
+  table.querySelectorAll("tr").forEach(r=>r.style.display="");
+  updateSummary();
+  window.print();
+}
+
+function generatePDF() {
+  applyFilters();
+  let container = document.createElement('div');
+  container.style.padding = '20px';
+  
+  let header = document.createElement('h2');
+  header.textContent = "فرزاتشي للخياطة الرجالية - فاتورة عمل";
+  header.style.textAlign = "center";
+  header.style.marginBottom = "20px";
+  container.appendChild(header);
+  
+  let tableClone = document.getElementById("workTable").cloneNode(true);
+  tableClone.querySelectorAll(".no-print").forEach(el => el.remove());
+  container.appendChild(tableClone);
+  
+  let totalDiv = document.createElement('div');
+  totalDiv.textContent = document.getElementById("summary").textContent;
+  totalDiv.style.textAlign = "center"; 
+  totalDiv.style.fontWeight = "bold"; 
+  totalDiv.style.marginTop = "15px";
+  totalDiv.style.fontSize = "1.2em";
+  container.appendChild(totalDiv);
+  
+  html2pdf().from(container).save("فاتورة_فرزاتشي.pdf");
+}
+
+function sendWhatsAppPDFText() {
+  generatePDF();
+  applyFilters();
+  
+  let rows=[];
+  let totalCount=0;
+  table.querySelectorAll("tr").forEach(r=>{
+    if(r.style.display!=="none"){
+      rows.push(`|${r.children[0].textContent}|${r.children[1].textContent}|${r.children[2].textContent}|${r.children[3].textContent}|${r.children[4].textContent}|`);
+      totalCount+=Number(r.children[3].textContent||0);
+    }
+  });
+  
+  if(rows.length===0){ alert("لا توجد بيانات للإرسال."); return; }
+  
+  let header = "فرزاتشي للخياطة الرجالية - فاتورة عمل\n\n";
+  let tableHeader = "|رقم الفاتورة|التاريخ|النوع|العدد|الملاحظات|\n";
+  let separator = "--------------------------------------\n";
+  let messageText = header + tableHeader + separator + rows.join("\n") + "\n\nإجمالي العدد: " + totalCount + "\n\nملف PDF تم إنشاؤه، يمكنك تنزيله وإرساله مع هذه الرسالة.";
+  
+  let phone = "774353110";
+  let message = encodeURIComponent(messageText);
+  window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  alert("تم إنشاء PDF وفتح واتساب مع رسالة جاهزة للإرسال.");
+}
+</script>
+</body>
+</html>
