@@ -1,0 +1,209 @@
+---
+name: Custom issue template
+about: Describe this issue template's purpose here.
+title: كشف_العمل_فرزاتشي.zip (3).html
+labels: ''
+assignees: ''
+
+---
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>كشف العمل - فرزاتشي للخياطة الرجالية</title>
+<style>
+body { font-family: "Cairo", sans-serif; background: #fdfbf8; color: #333; margin:0; padding:0; text-align:center; }
+header { background: black; color: gold; padding:15px; font-size:1.5em; font-weight:bold; }
+.container { padding:20px; max-width:1000px; margin:auto; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th, td { border:1px solid #ccc; padding:10px; }
+th { background:black; color:gold; }
+button { background:black; color:gold; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; margin:5px; }
+button:hover { background:gold; color:black; }
+input, select, textarea { padding:8px; border:1px solid #ccc; border-radius:6px; }
+#summary { margin-top:20px; font-size:1.2em; font-weight:bold; text-align:right; }
+@media print { .no-print { display:none; } header { color:black; background:none; } }
+</style>
+</head>
+<body>
+<header>فرزاتشي للخياطة الرجالية - كشف العمل</header>
+
+<div class="container">
+<div class="no-print">
+<input type="date" id="date">
+<select id="size">
+<option value="">اختر النوع</option>
+<option>26</option><option>28</option><option>30</option><option>32</option><option>34</option>
+<option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+<option>46</option><option>48</option><option>50</option>
+</select>
+<input type="number" id="count" placeholder="العدد">
+<textarea id="note" placeholder="الملاحظات"></textarea>
+<br>
+<button onclick="addRow()">➕ إضافة</button>
+<button onclick="saveData()">💾 حفظ</button>
+<button onclick="printFiltered()">🖨️ طباعة الملخص</button>
+<button onclick="printFullTable()">🖨️ طباعة الجدول كامل</button>
+<button onclick="generatePDF()">📄 إنشاء فاتورة PDF</button>
+<button onclick="sendWhatsAppPDFText()">💬 إرسال فاتورة PDF + نص عبر واتساب</button>
+<br><br>
+<label>فلتر حسب اليوم: </label>
+<input type="date" id="filterDate" onchange="applyFilters()">
+<label>فلتر حسب النوع: </label>
+<select id="filterType" onchange="applyFilters()">
+<option value="">الكل</option>
+<option>26</option><option>28</option><option>30</option><option>32</option><option>34</option>
+<option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+<option>46</option><option>48</option><option>50</option>
+</select>
+</div>
+
+<table id="workTable">
+<thead>
+<tr>
+<th>رقم الفاتورة</th>
+<th>اليوم والتاريخ</th>
+<th>النوع</th>
+<th>العدد</th>
+<th>الملاحظات</th>
+<th class="no-print">إجراءات</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<div id="summary">إجمالي العدد: 0</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+let table = document.querySelector("#workTable tbody");
+let lastInvoice = Number(localStorage.getItem("lastInvoice") || 0);
+
+function addRow() {
+  let date = document.getElementById("date").value;
+  let size = document.getElementById("size").value;
+  let count = document.getElementById("count").value;
+  let note = document.getElementById("note").value;
+  if (!date || !size || !count) { alert("الرجاء إدخال جميع الحقول المطلوبة."); return; }
+  lastInvoice +=1; localStorage.setItem("lastInvoice", lastInvoice);
+  let row = document.createElement("tr");
+  row.innerHTML = `<td>${lastInvoice}</td><td>${date}</td><td>${size}</td><td>${count}</td><td>${note}</td>
+  <td class="no-print"><button onclick="editRow(this)">✏️ تعديل</button> <button onclick="deleteRow(this)">🗑️ حذف</button></td>`;
+  table.appendChild(row);
+  clearFields(); saveData(); updateSummary();
+}
+
+function clearFields() {
+  document.getElementById("date").value=""; document.getElementById("size").value=""; document.getElementById("count").value=""; document.getElementById("note").value="";
+}
+
+function editRow(btn) {
+  let password = prompt("أدخل كلمة المرور للتعديل:"); if(password!=="1234"){alert("كلمة المرور غير صحيحة!"); return;}
+  let row=btn.parentElement.parentElement;
+  document.getElementById("date").value=row.children[1].textContent;
+  document.getElementById("size").value=row.children[2].textContent;
+  document.getElementById("count").value=row.children[3].textContent;
+  document.getElementById("note").value=row.children[4].textContent;
+  row.remove(); saveData(); updateSummary();
+}
+
+function deleteRow(btn) {
+  let password = prompt("أدخل كلمة المرور للحذف:"); if(password!=="1234"){alert("كلمة المرور غير صحيحة!"); return;}
+  btn.parentElement.parentElement.remove(); saveData(); updateSummary();
+}
+
+function saveData() {
+  let rows=[]; table.querySelectorAll("tr").forEach(r=>{
+    rows.push({invoice:r.children[0].textContent,date:r.children[1].textContent,size:r.children[2].textContent,count:r.children[3].textContent,note:r.children[4].textContent});
+  });
+  localStorage.setItem("workData", JSON.stringify(rows));
+}
+
+function loadData() {
+  let data = JSON.parse(localStorage.getItem("workData") || "[]");
+  data.forEach(d=>{
+    let row=document.createElement("tr");
+    row.innerHTML=`<td>${d.invoice}</td><td>${d.date}</td><td>${d.size}</td><td>${d.count}</td><td>${d.note}</td>
+    <td class="no-print"><button onclick="editRow(this)">✏️ تعديل</button> <button onclick="deleteRow(this)">🗑️ حذف</button></td>`;
+    table.appendChild(row);
+  });
+  if(data.length>0){lastInvoice=Math.max(...data.map(d=>Number(d.invoice))); localStorage.setItem("lastInvoice",lastInvoice);}
+  updateSummary();
+}
+loadData();
+
+function updateSummary(){
+  let total=0;
+  table.querySelectorAll("tr").forEach(r=>total+=Number(r.children[3].textContent||0));
+  document.getElementById("summary").textContent=`إجمالي العدد: ${total}`;
+}
+
+function applyFilters(){
+  let filterDate=document.getElementById("filterDate").value;
+  let filterType=document.getElementById("filterType").value;
+  table.querySelectorAll("tr").forEach(r=>{
+    let show=true;
+    if(filterDate && r.children[1].textContent!==filterDate) show=false;
+    if(filterType && r.children[2].textContent!==filterType) show=false;
+    r.style.display=show?"":"none";
+  });
+}
+
+function printFiltered(){ applyFilters(); window.print(); }
+
+function printFullTable(){
+  table.querySelectorAll("tr").forEach(r=>r.style.display=""); // عرض كل الصفوف
+  window.print();
+}
+
+function generatePDF() {
+  applyFilters();
+  let container = document.createElement('div');
+  let header = document.createElement('h2');
+  header.textContent = "فرزاتشي للخياطة الرجالية - فاتورة عمل";
+  header.style.textAlign = "center";
+  container.appendChild(header);
+  
+  let tableClone = document.getElementById("workTable").cloneNode(true);
+  tableClone.querySelectorAll(".no-print").forEach(el => el.remove());
+  container.appendChild(tableClone);
+  
+  let totalDiv = document.createElement('div');
+  totalDiv.textContent = document.getElementById("summary").textContent;
+  totalDiv.style.textAlign = "right"; totalDiv.style.fontWeight = "bold"; totalDiv.style.marginTop = "10px";
+  container.appendChild(totalDiv);
+  
+  html2pdf().from(container).save("فاتورة_فرزاتشي.pdf");
+}
+
+function sendWhatsAppPDFText() {
+  generatePDF();
+  applyFilters();
+  
+  let rows=[];
+  let totalCount=0;
+  table.querySelectorAll("tr").forEach(r=>{
+    if(r.style.display!=="none"){
+      rows.push(`|${r.children[0].textContent}|${r.children[1].textContent}|${r.children[2].textContent}|${r.children[3].textContent}|${r.children[4].textContent}|`);
+      totalCount+=Number(r.children[3].textContent||0);
+    }
+  });
+  
+  if(rows.length===0){ alert("لا توجد بيانات للإرسال."); return; }
+  
+  let header = "فرزاتشي للخياطة الرجالية - فاتورة عمل\n\n";
+  let tableHeader = "|رقم الفاتورة|التاريخ|النوع|العدد|الملاحظات|\n";
+  let separator = "--------------------------------------\n";
+  let messageText = header + tableHeader + separator + rows.join("\n") + "\n\nإجمالي العدد: " + totalCount + "\n\nملف PDF تم إنشاؤه، يمكنك تنزيله وإرساله مع هذه الرسالة.";
+  
+  let phone = "774353110";
+  let message = encodeURIComponent(messageText);
+  window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  alert("تم إنشاء PDF وفتح واتساب مع رسالة جاهزة للإرسال.");
+}
+</script>
+</body>
+</html>
